@@ -3,11 +3,11 @@ import SwiftUI
 @main
 struct FlightPriceTrackerApp: App {
     @StateObject private var dataStore = DataStore.shared
-    @State private var showMainWindow = true
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        // Main Window
-        WindowGroup {
+        // Main Window (hidden by default)
+        Window("機票價格監控", id: "main") {
             ContentView()
                 .environmentObject(dataStore)
         }
@@ -31,9 +31,24 @@ struct FlightPriceTrackerApp: App {
     }
 }
 
+// MARK: - App Delegate
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Close all windows on launch - only show menu bar
+        DispatchQueue.main.async {
+            for window in NSApp.windows {
+                if window.title == "機票價格監控" || window.identifier?.rawValue.contains("main") == true {
+                    window.close()
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Menu Bar View
 struct MenuBarView: View {
     @EnvironmentObject var dataStore: DataStore
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -64,10 +79,8 @@ struct MenuBarView: View {
             .keyboardShortcut("r", modifiers: .command)
 
             Button("開啟主視窗") {
+                openWindow(id: "main")
                 NSApp.activate(ignoringOtherApps: true)
-                if let window = NSApp.windows.first(where: { $0.title.contains("FlightPriceTracker") || $0.contentView != nil }) {
-                    window.makeKeyAndOrderFront(nil)
-                }
             }
             .keyboardShortcut("o", modifiers: .command)
 
