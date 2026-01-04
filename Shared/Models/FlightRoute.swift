@@ -79,6 +79,20 @@ extension FlightRoute {
                 destinationCity: "雷克雅維克",
                 outboundDate: outbound,
                 returnDate: returnDate
+            ),
+            FlightRoute(
+                departureAirport: "TPE",
+                arrivalAirport: "IST",
+                destinationCity: "伊斯坦堡",
+                outboundDate: outbound,
+                returnDate: returnDate
+            ),
+            FlightRoute(
+                departureAirport: "TPE",
+                arrivalAirport: "PRG",
+                destinationCity: "布拉格",
+                outboundDate: outbound,
+                returnDate: returnDate
             )
         ]
     }()

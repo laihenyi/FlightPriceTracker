@@ -4,7 +4,7 @@ macOS 桌面小工具，追蹤台北到歐洲航線的機票價格。
 
 ## 功能特色
 
-- 監控 5 條航線：台北 → 羅馬、巴黎、蘇黎世、倫敦、雷克雅維克
+- 監控 7 條航線：台北 → 羅馬、巴黎、蘇黎世、倫敦、雷克雅維克、伊斯坦堡、布拉格
 - 每日 12:00 / 18:00 自動查詢
 - 顯示價格漲跌幅（綠色跌/紅色漲）
 - 跌幅超過 5% 推送通知 🔔
@@ -18,36 +18,29 @@ macOS 桌面小工具，追蹤台北到歐洲航線的機票價格。
 
 ## 安裝步驟
 
-### 1. 建立 Xcode 專案
+### 1. 複製並開啟專案
 
 ```bash
 # 複製專案
 git clone https://github.com/laihenyi/FlightPriceTracker.git
 cd FlightPriceTracker
+
+# 用 Xcode 開啟
+open FlightPriceTracker.xcodeproj
 ```
 
-在 Xcode 中：
-1. File → New → Project
-2. 選擇 macOS → App
-3. Product Name: `FlightPriceTracker`
-4. 勾選 "Include Widget Extension"
-
-### 2. 設定 App Group
+### 2. 設定開發者帳號
 
 1. 選擇專案 → Signing & Capabilities
-2. 點擊 "+ Capability" 添加 "App Groups"
-3. 新增 App Group ID: `group.com.flightpricetracker`
-4. 對 Widget Extension 重複以上步驟
+2. 選擇你的 Development Team
+3. 對 FlightPriceTracker 和 FlightWidgetExtension 兩個 Target 都要設定
 
-### 3. 添加原始碼
+### 3. 建立 App Group（如需要）
 
-將以下資料夾中的檔案添加到對應的 Target：
-
-| 資料夾 | Target |
-|--------|--------|
-| `Shared/` | App + Widget (兩者都要) |
-| `FlightPriceTracker/` | App |
-| `FlightWidget/` | Widget Extension |
+如果 App Group 尚未建立：
+1. 登入 [Apple Developer](https://developer.apple.com/)
+2. 建立 App Group ID: `group.com.flightpricetracker`
+3. 在 Xcode 中勾選該 App Group
 
 ### 4. 設定 API Key
 
@@ -90,15 +83,17 @@ FlightPriceTracker/
 | 台北 (TPE) | 蘇黎世 | ZRH |
 | 台北 (TPE) | 倫敦 | LHR |
 | 台北 (TPE) | 雷克雅維克 | KEF |
+| 台北 (TPE) | 伊斯坦堡 | IST |
+| 台北 (TPE) | 布拉格 | PRG |
 
 ## API 用量估算
 
 | 項目 | 數量 |
 |------|------|
-| 航線數 | 5 條 |
+| 航線數 | 7 條 |
 | 每日查詢 | 2 次 (12:00, 18:00) |
-| 每日總查詢 | 10 次 |
-| 每月總查詢 | ~300 次 |
+| 每日總查詢 | 14 次 |
+| 每月總查詢 | ~420 次 |
 
 建議使用 SerpApi 付費方案以支援完整功能。
 
