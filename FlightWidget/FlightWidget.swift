@@ -73,21 +73,23 @@ struct FlightTimelineProvider: TimelineProvider {
         )
     }
 
+    /// Refresh schedule: 8:00, 12:00, 16:00, 20:00
+    private let refreshHours = [8, 12, 16, 20]
+
     private func calculateNextRefreshDate(from date: Date) -> Date {
         let calendar = Calendar.current
         let hour = calendar.component(.hour, from: date)
 
-        if hour < 12 {
-            // Next refresh at 12:00 today
-            return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)!
-        } else if hour < 18 {
-            // Next refresh at 18:00 today
-            return calendar.date(bySettingHour: 18, minute: 0, second: 0, of: date)!
-        } else {
-            // Next refresh at 12:00 tomorrow
-            let tomorrow = calendar.date(byAdding: .day, value: 1, to: date)!
-            return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: tomorrow)!
+        // Find next refresh hour
+        for refreshHour in refreshHours {
+            if hour < refreshHour {
+                return calendar.date(bySettingHour: refreshHour, minute: 0, second: 0, of: date)!
+            }
         }
+
+        // All refresh times passed today, next is 8:00 tomorrow
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: date)!
+        return calendar.date(bySettingHour: refreshHours[0], minute: 0, second: 0, of: tomorrow)!
     }
 }
 
@@ -238,7 +240,7 @@ struct LargeWidgetView: View {
 
                 VStack(alignment: .trailing) {
                     Text("更新: \(entry.date.formatted(date: .omitted, time: .shortened))")
-                    Text("下次: 12:00 / 18:00")
+                    Text("排程: 8/12/16/20時")
                 }
                 .font(.caption2)
                 .foregroundColor(.secondary)
@@ -351,8 +353,14 @@ struct FlightWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: FlightTimelineProvider()) { entry in
-            FlightWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+            if #available(macOS 14.0, *) {
+                FlightWidgetEntryView(entry: entry)
+                    .containerBackground(.fill.tertiary, for: .widget)
+            } else {
+                FlightWidgetEntryView(entry: entry)
+                    .padding()
+                    .background(Color(NSColor.windowBackgroundColor))
+            }
         }
         .configurationDisplayName("機票價格監控")
         .description("追蹤台北到歐洲航線的機票價格")
@@ -361,7 +369,9 @@ struct FlightWidget: Widget {
 }
 
 // MARK: - Preview
-#Preview(as: .systemMedium) {
+#if DEBUG
+@available(macOS 14.0, *)
+#Preview("Medium Widget", as: .systemMedium) {
     FlightWidget()
 } timeline: {
     FlightEntry(
@@ -396,3 +406,4 @@ struct FlightWidget: Widget {
         ]
     )
 }
+#endif

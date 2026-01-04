@@ -7,10 +7,58 @@ actor SerpApiService {
     private let baseURL = "https://serpapi.com/search.json"
     private let session: URLSession
 
+    /// Chinese airlines to exclude from results
+    private let excludedAirlines: Set<String> = [
+        // Major Chinese carriers
+        "Air China", "中國國際航空",
+        "China Eastern", "中國東方航空",
+        "China Southern", "中國南方航空",
+        "Hainan Airlines", "海南航空",
+        "Xiamen Airlines", "廈門航空",
+        "Shenzhen Airlines", "深圳航空",
+        "Sichuan Airlines", "四川航空",
+        "Spring Airlines", "春秋航空",
+        "Juneyao Airlines", "吉祥航空",
+        "Shandong Airlines", "山東航空",
+        "Lucky Air", "祥鵬航空",
+        "Tibet Airlines", "西藏航空",
+        "Okay Airways", "奧凱航空",
+        "9 Air", "九元航空",
+        "Beijing Capital Airlines", "首都航空",
+        "Loong Air", "長龍航空",
+        "Ruili Airlines", "瑞麗航空",
+        "Donghai Airlines", "東海航空",
+        "Urumqi Air", "烏魯木齊航空",
+        "Fuzhou Airlines", "福州航空",
+        "Colorful Guizhou Airlines", "多彩貴州航空",
+        "Qingdao Airlines", "青島航空",
+        "West Air", "西部航空",
+        "Chengdu Airlines", "成都航空",
+        "Kunming Airlines", "昆明航空",
+        "Grand China Air", "大新華航空",
+        "Hebei Airlines", "河北航空",
+        "Jiangxi Air", "江西航空",
+        "China United Airlines", "中國聯合航空",
+        "China Express Airlines", "華夏航空",
+    ]
+
     private init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         self.session = URLSession(configuration: config)
+    }
+
+    /// Check if a flight contains any excluded airline
+    private func containsExcludedAirline(_ flight: SerpApiFlight) -> Bool {
+        for leg in flight.flights {
+            let airlineLower = leg.airline.lowercased()
+            for excluded in excludedAirlines {
+                if airlineLower.contains(excluded.lowercased()) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     /// Fetch flight prices for a route
@@ -53,11 +101,24 @@ actor SerpApiService {
 
         let apiResponse = try JSONDecoder().decode(SerpApiResponse.self, from: data)
 
-        // Find the best (cheapest) flight
+        // Find the best (cheapest) flight, excluding Chinese airlines
         let allFlights = (apiResponse.bestFlights ?? []) + (apiResponse.otherFlights ?? [])
+        let filteredFlights = allFlights.filter { !containsExcludedAirline($0) }
 
-        guard let cheapestFlight = allFlights.min(by: { $0.price < $1.price }) else {
-            throw SerpApiError.noFlightsFound
+        guard let cheapestFlight = filteredFlights.min(by: { $0.price < $1.price }) else {
+            // If no flights after filtering, try all flights as fallback
+            guard let fallbackFlight = allFlights.min(by: { $0.price < $1.price }) else {
+                throw SerpApiError.noFlightsFound
+            }
+            // Return fallback but mark it
+            return FlightPrice(
+                routeId: route.id,
+                price: Double(fallbackFlight.price),
+                currency: "TWD",
+                airline: (fallbackFlight.flights.first?.airline ?? "Unknown") + " ⚠️",
+                duration: fallbackFlight.totalDuration,
+                stops: fallbackFlight.flights.count - 1
+            )
         }
 
         return FlightPrice(
