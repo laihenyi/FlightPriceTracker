@@ -1,4 +1,5 @@
 import SwiftUI
+import ServiceManagement
 
 @main
 struct FlightPriceTrackerApp: App {
@@ -49,6 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 struct MenuBarView: View {
     @EnvironmentObject var dataStore: DataStore
     @Environment(\.openWindow) private var openWindow
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -88,6 +90,22 @@ struct MenuBarView: View {
                 NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
             }
             .keyboardShortcut(",", modifiers: .command)
+
+            Divider()
+
+            Toggle("開機自動啟動", isOn: $launchAtLogin)
+                .onChange(of: launchAtLogin) { newValue in
+                    do {
+                        if newValue {
+                            try SMAppService.mainApp.register()
+                        } else {
+                            try SMAppService.mainApp.unregister()
+                        }
+                    } catch {
+                        print("Failed to update launch at login: \(error)")
+                        launchAtLogin = !newValue // Revert on failure
+                    }
+                }
 
             Divider()
 
