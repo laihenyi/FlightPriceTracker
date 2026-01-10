@@ -198,9 +198,6 @@ class DataStore: ObservableObject {
         return status == errSecSuccess
     }
 
-    // Fallback API key (for development only - remove before committing to public repo)
-    private let fallbackApiKey = "245e619fb22a4083bc950df0acd05171a441ab20df374d89824a34e82f70beaf"
-
     /// Load API key from Keychain
     func loadApiKey() -> String? {
         let query: [String: Any] = [
@@ -216,8 +213,7 @@ class DataStore: ObservableObject {
         guard status == errSecSuccess,
               let data = result as? Data,
               let apiKey = String(data: data, encoding: .utf8) else {
-            // Fallback to hardcoded key if Keychain access fails
-            return fallbackApiKey
+            return nil
         }
 
         return apiKey

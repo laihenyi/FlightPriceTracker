@@ -8,6 +8,88 @@ actor AmadeusApiService {
     private let flightSearchURL = "https://test.api.amadeus.com/v2/shopping/flight-offers"
     private let session: URLSession
 
+    /// Chinese airport codes to exclude from layovers (不在中國境內轉機)
+    private let chinaAirportCodes: Set<String> = [
+        // Beijing 北京
+        "PEK", "PKX",
+        // Shanghai 上海
+        "PVG", "SHA",
+        // Guangzhou 廣州
+        "CAN",
+        // Shenzhen 深圳
+        "SZX",
+        // Chengdu 成都
+        "CTU", "TFU",
+        // Chongqing 重慶
+        "CKG",
+        // Xi'an 西安
+        "XIY",
+        // Hangzhou 杭州
+        "HGH",
+        // Nanjing 南京
+        "NKG",
+        // Wuhan 武漢
+        "WUH",
+        // Kunming 昆明
+        "KMG",
+        // Xiamen 廈門
+        "XMN",
+        // Qingdao 青島
+        "TAO",
+        // Dalian 大連
+        "DLC",
+        // Tianjin 天津
+        "TSN",
+        // Shenyang 瀋陽
+        "SHE",
+        // Harbin 哈爾濱
+        "HRB",
+        // Changsha 長沙
+        "CSX",
+        // Zhengzhou 鄭州
+        "CGO",
+        // Fuzhou 福州
+        "FOC",
+        // Jinan 濟南
+        "TNA",
+        // Urumqi 烏魯木齊
+        "URC",
+        // Nanning 南寧
+        "NNG",
+        // Haikou 海口
+        "HAK",
+        // Sanya 三亞
+        "SYX",
+        // Guiyang 貴陽
+        "KWE",
+        // Lanzhou 蘭州
+        "LHW",
+        // Yinchuan 銀川
+        "INC",
+        // Xining 西寧
+        "XNN",
+        // Hohhot 呼和浩特
+        "HET",
+        // Nanchang 南昌
+        "KHN",
+        // Hefei 合肥
+        "HFE",
+        // Changchun 長春
+        "CGQ",
+        // Shijiazhuang 石家莊
+        "SJW",
+        // Taiyuan 太原
+        "TYN",
+        // Wuxi 無錫
+        "WUX",
+        // Ningbo 寧波
+        "NGB",
+        // Wenzhou 溫州
+        "WNZ",
+        // Zhuhai 珠海
+        "ZUH",
+    ]
+
     // Token management
     private var accessToken: String?
     private var tokenExpiration: Date?
@@ -125,8 +207,24 @@ actor AmadeusApiService {
         // Log diagnostic info
         log("📊 \(route.displayName): \(apiResponse.data.count) offers found")
 
-        guard let cheapestOffer = apiResponse.data.first else {
-            throw AmadeusApiError.noFlightsFound
+        // Filter out flights with China layovers
+        let filteredOffers = apiResponse.data.filter { offer in
+            !hasChineseLayover(offer: offer)
+        }
+
+        // Log filtering results
+        let allPrices = apiResponse.data.prefix(5).compactMap { Double($0.price.total) }.map { Int($0) }
+        let filteredPrices = filteredOffers.prefix(5).compactMap { Double($0.price.total) }.map { Int($0) }
+        log("📊 \(route.displayName): all prices = \(allPrices)")
+        log("📊 \(route.displayName): after China filter = \(filteredPrices)")
+
+        guard let cheapestOffer = filteredOffers.first else {
+            if apiResponse.data.isEmpty {
+                throw AmadeusApiError.noFlightsFound
+            } else {
+                log("⚠️ \(route.displayName): All \(apiResponse.data.count) flights have China layovers")
+                throw AmadeusApiError.noFlightsFound
+            }
         }
 
         // Parse price
@@ -143,10 +241,6 @@ actor AmadeusApiService {
 
         // Count stops
         let stops = (cheapestOffer.itineraries.first?.segments.count ?? 1) - 1
-
-        // Log prices
-        let allPrices = apiResponse.data.prefix(5).compactMap { Double($0.price.total) }.map { Int($0) }
-        log("📊 \(route.displayName): prices = \(allPrices)")
         log("✅ \(route.displayName): TWD \(Int(price)) (\(airlineName))")
 
         return FlightPrice(
@@ -177,6 +271,21 @@ actor AmadeusApiService {
         }
 
         return minutes
+    }
+
+    /// Check if a flight offer has any layover in Chinese airports
+    private func hasChineseLayover(offer: AmadeusFlightOffer) -> Bool {
+        for itinerary in offer.itineraries {
+            let segments = itinerary.segments
+            // Check all segments except the last one (layover airports are arrival airports of non-final segments)
+            for i in 0..<(segments.count - 1) {
+                let layoverAirport = segments[i].arrival.iataCode.uppercased()
+                if chinaAirportCodes.contains(layoverAirport) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     private func log(_ message: String) {
