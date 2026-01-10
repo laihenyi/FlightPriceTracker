@@ -9,6 +9,12 @@ struct SettingsView: View {
     @State private var isSaving = false
     @State private var showSaveSuccess = false
 
+    // Amadeus credentials
+    @State private var amadeusClientId: String = ""
+    @State private var amadeusClientSecret: String = ""
+    @State private var showAmadeusSecret = false
+    @State private var showAmadeusSaveSuccess = false
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -26,48 +32,132 @@ struct SettingsView: View {
             Divider()
 
             Form {
-                // API Key Section
+                // API Provider Selection
                 Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("SerpApi API Key")
-                            .font(.headline)
-
-                        HStack {
-                            if showApiKey {
-                                TextField("輸入 API Key", text: $apiKey)
-                                    .textFieldStyle(.roundedBorder)
-                            } else {
-                                SecureField("輸入 API Key", text: $apiKey)
-                                    .textFieldStyle(.roundedBorder)
-                            }
-
-                            Button(action: { showApiKey.toggle() }) {
-                                Image(systemName: showApiKey ? "eye.slash" : "eye")
-                            }
-                            .buttonStyle(.borderless)
-                        }
-
-                        HStack {
-                            Button("儲存 API Key") {
-                                saveApiKey()
-                            }
-                            .disabled(apiKey.isEmpty || isSaving)
-
-                            if showSaveSuccess {
-                                Label("已儲存", systemImage: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                                    .font(.caption)
-                            }
-
-                            Spacer()
-
-                            Link("取得 API Key", destination: URL(string: "https://serpapi.com/manage-api-key")!)
-                                .font(.caption)
+                    Picker("資料來源", selection: $dataStore.selectedApiProvider) {
+                        ForEach(DataStore.ApiProvider.allCases, id: \.self) { provider in
+                            Text(provider.rawValue).tag(provider)
                         }
                     }
-                    .padding(.vertical, 8)
+                    .pickerStyle(.segmented)
+                    .onChange(of: dataStore.selectedApiProvider) { newValue in
+                        dataStore.saveApiProvider(newValue)
+                    }
                 } header: {
-                    Text("API 設定")
+                    Text("API 來源")
+                } footer: {
+                    Text(dataStore.selectedApiProvider == .serpApi
+                         ? "SerpApi 使用 Google Flights 資料"
+                         : "Amadeus 提供官方航空資料 (免費方案可用)")
+                        .font(.caption)
+                }
+
+                // SerpApi Section (shown when SerpApi is selected)
+                if dataStore.selectedApiProvider == .serpApi {
+                    Section {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("SerpApi API Key")
+                                .font(.headline)
+
+                            HStack {
+                                if showApiKey {
+                                    TextField("輸入 API Key", text: $apiKey)
+                                        .textFieldStyle(.roundedBorder)
+                                } else {
+                                    SecureField("輸入 API Key", text: $apiKey)
+                                        .textFieldStyle(.roundedBorder)
+                                }
+
+                                Button(action: { showApiKey.toggle() }) {
+                                    Image(systemName: showApiKey ? "eye.slash" : "eye")
+                                }
+                                .buttonStyle(.borderless)
+                            }
+
+                            HStack {
+                                Button("儲存 API Key") {
+                                    saveApiKey()
+                                }
+                                .disabled(apiKey.isEmpty || isSaving)
+
+                                if showSaveSuccess {
+                                    Label("已儲存", systemImage: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                        .font(.caption)
+                                }
+
+                                Spacer()
+
+                                Link("取得 API Key", destination: URL(string: "https://serpapi.com/manage-api-key")!)
+                                    .font(.caption)
+                            }
+                        }
+                        .padding(.vertical, 8)
+                    } header: {
+                        Text("SerpApi 設定")
+                    }
+                }
+
+                // Amadeus Section (shown when Amadeus is selected)
+                if dataStore.selectedApiProvider == .amadeus {
+                    Section {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Amadeus API 憑證")
+                                .font(.headline)
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Client ID")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                TextField("輸入 Client ID", text: $amadeusClientId)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Client Secret")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                HStack {
+                                    if showAmadeusSecret {
+                                        TextField("輸入 Client Secret", text: $amadeusClientSecret)
+                                            .textFieldStyle(.roundedBorder)
+                                    } else {
+                                        SecureField("輸入 Client Secret", text: $amadeusClientSecret)
+                                            .textFieldStyle(.roundedBorder)
+                                    }
+
+                                    Button(action: { showAmadeusSecret.toggle() }) {
+                                        Image(systemName: showAmadeusSecret ? "eye.slash" : "eye")
+                                    }
+                                    .buttonStyle(.borderless)
+                                }
+                            }
+
+                            HStack {
+                                Button("儲存憑證") {
+                                    saveAmadeusCredentials()
+                                }
+                                .disabled(amadeusClientId.isEmpty || amadeusClientSecret.isEmpty || isSaving)
+
+                                if showAmadeusSaveSuccess {
+                                    Label("已儲存", systemImage: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                        .font(.caption)
+                                }
+
+                                Spacer()
+
+                                Link("註冊 Amadeus", destination: URL(string: "https://developers.amadeus.com/register")!)
+                                    .font(.caption)
+                            }
+                        }
+                        .padding(.vertical, 8)
+                    } header: {
+                        Text("Amadeus 設定")
+                    } footer: {
+                        Text("免費方案：每月 2,000 次 API 呼叫")
+                            .font(.caption)
+                    }
                 }
 
                 // Schedule Info Section
@@ -103,8 +193,8 @@ struct SettingsView: View {
                         HStack {
                             Text("API 狀態")
                             Spacer()
-                            if dataStore.hasApiKey {
-                                Label("已設定", systemImage: "checkmark.circle.fill")
+                            if isApiConfigured {
+                                Label("已設定 (\(dataStore.selectedApiProvider.rawValue))", systemImage: "checkmark.circle.fill")
                                     .foregroundColor(.green)
                             } else {
                                 Label("未設定", systemImage: "xmark.circle.fill")
@@ -132,12 +222,27 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
         }
-        .frame(width: 450, height: 500)
+        .frame(width: 450, height: 550)
         .onAppear {
-            // Load existing API key (masked)
+            // Load existing SerpApi key (masked)
             if dataStore.hasApiKey {
                 apiKey = "••••••••••••••••"
             }
+            // Load existing Amadeus credentials (masked)
+            if dataStore.hasAmadeusCredentials {
+                amadeusClientId = "••••••••••••••••"
+                amadeusClientSecret = "••••••••••••••••"
+            }
+        }
+    }
+
+    /// Check if current API provider is configured
+    private var isApiConfigured: Bool {
+        switch dataStore.selectedApiProvider {
+        case .serpApi:
+            return dataStore.hasApiKey
+        case .amadeus:
+            return dataStore.hasAmadeusCredentials
         }
     }
 
@@ -149,6 +254,23 @@ struct SettingsView: View {
             showSaveSuccess = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 showSaveSuccess = false
+            }
+        }
+        isSaving = false
+    }
+
+    private func saveAmadeusCredentials() {
+        guard !amadeusClientId.isEmpty, amadeusClientId != "••••••••••••••••",
+              !amadeusClientSecret.isEmpty, amadeusClientSecret != "••••••••••••••••" else { return }
+
+        isSaving = true
+        let idSaved = dataStore.saveAmadeusClientId(amadeusClientId)
+        let secretSaved = dataStore.saveAmadeusClientSecret(amadeusClientSecret)
+
+        if idSaved && secretSaved {
+            showAmadeusSaveSuccess = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                showAmadeusSaveSuccess = false
             }
         }
         isSaving = false

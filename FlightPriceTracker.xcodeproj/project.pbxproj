@@ -10,8 +10,10 @@
 		06F8217CECD44F21A79D82F7 /* RouteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F288DCE3681693D0FA39CA7 /* RouteEditorView.swift */; };
 		07412BAF5DDF10CF83CA18BD /* FlightPrice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F59585F06354274B9024A046 /* FlightPrice.swift */; };
 		0880268C2EA0AF157738839C /* FlightRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90F5080C642DD2DB760D147C /* FlightRoute.swift */; };
+		0E61EB34284C832E5B467691 /* BackgroundTaskScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96E4703F9FE2F5BC0F2F166D /* BackgroundTaskScheduler.swift */; };
 		17CCADBCA444BD56296F7BAB /* FlightWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE863F3E179F3E0D3FE0C41 /* FlightWidget.swift */; };
 		280DD8BE228372BA436CC8F7 /* PriceChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F8438E007953C0173B854F /* PriceChange.swift */; };
+		2EEFBF59CF9BEA875735364D /* BackgroundTaskScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96E4703F9FE2F5BC0F2F166D /* BackgroundTaskScheduler.swift */; };
 		356067FB111DF8915B6936EF /* FlightPrice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F59585F06354274B9024A046 /* FlightPrice.swift */; };
 		47BBC505CD9B1CBA33088236 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F4F302951BEAD19675273D4 /* SettingsView.swift */; };
 		4E1B5E14472D68B90A291441 /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1102FC93E0BC6E136E26D4AB /* DataStore.swift */; };
@@ -20,7 +22,9 @@
 		64DCB5335504B6C7C33566F8 /* FlightWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEFEA229CD8CE3E7B5BA452 /* FlightWidgetBundle.swift */; };
 		7922674B681F87B3B1D923CB /* SerpApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924210E01BA2EFA92D19B8E5 /* SerpApiService.swift */; };
 		7A0217DF63F396C5DDF10B8B /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1102FC93E0BC6E136E26D4AB /* DataStore.swift */; };
+		95DEDD7B0C4A1252AAFF026B /* AmadeusApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C8961CDC970AFCA8215C888 /* AmadeusApiService.swift */; };
 		9AC538B57F255B5F8E1C6CAE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C9B4DC968793FDC6A878CF /* ContentView.swift */; };
+		9B34E9251EA5B28AFA0734A8 /* AmadeusApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C8961CDC970AFCA8215C888 /* AmadeusApiService.swift */; };
 		9D2CA500141D3DE74454F691 /* SerpApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924210E01BA2EFA92D19B8E5 /* SerpApiService.swift */; };
 		9D48C1B49B646912BE1B4D71 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB490746995E4CDF0D17279 /* NotificationService.swift */; };
 		A456404054810DF70B96015A /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB490746995E4CDF0D17279 /* NotificationService.swift */; };
@@ -55,6 +59,7 @@
 /* Begin PBXFileReference section */
 		1102FC93E0BC6E136E26D4AB /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
 		2F4F302951BEAD19675273D4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		3C8961CDC970AFCA8215C888 /* AmadeusApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmadeusApiService.swift; sourceTree = "<group>"; };
 		3CB490746995E4CDF0D17279 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		4A78D10DD13E2A061204EF12 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4B63FC5C7E0E772120E47965 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -63,6 +68,7 @@
 		7F288DCE3681693D0FA39CA7 /* RouteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteEditorView.swift; sourceTree = "<group>"; };
 		90F5080C642DD2DB760D147C /* FlightRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightRoute.swift; sourceTree = "<group>"; };
 		924210E01BA2EFA92D19B8E5 /* SerpApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerpApiService.swift; sourceTree = "<group>"; };
+		96E4703F9FE2F5BC0F2F166D /* BackgroundTaskScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskScheduler.swift; sourceTree = "<group>"; };
 		98F8438E007953C0173B854F /* PriceChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceChange.swift; sourceTree = "<group>"; };
 		9DEA737DA2C08593A0BFBB1F /* FlightPriceTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightPriceTrackerApp.swift; sourceTree = "<group>"; };
 		9F8D1E7D9D12FD4EAF248329 /* FlightPriceTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlightPriceTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -134,6 +140,8 @@
 		D9B2C711B66F98B55B4BCDE1 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				3C8961CDC970AFCA8215C888 /* AmadeusApiService.swift */,
+				96E4703F9FE2F5BC0F2F166D /* BackgroundTaskScheduler.swift */,
 				3CB490746995E4CDF0D17279 /* NotificationService.swift */,
 				924210E01BA2EFA92D19B8E5 /* SerpApiService.swift */,
 			);
@@ -233,6 +241,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				95DEDD7B0C4A1252AAFF026B /* AmadeusApiService.swift in Sources */,
+				0E61EB34284C832E5B467691 /* BackgroundTaskScheduler.swift in Sources */,
 				9AC538B57F255B5F8E1C6CAE /* ContentView.swift in Sources */,
 				7A0217DF63F396C5DDF10B8B /* DataStore.swift in Sources */,
 				356067FB111DF8915B6936EF /* FlightPrice.swift in Sources */,
@@ -250,6 +260,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9B34E9251EA5B28AFA0734A8 /* AmadeusApiService.swift in Sources */,
+				2EEFBF59CF9BEA875735364D /* BackgroundTaskScheduler.swift in Sources */,
 				4E1B5E14472D68B90A291441 /* DataStore.swift in Sources */,
 				07412BAF5DDF10CF83CA18BD /* FlightPrice.swift in Sources */,
 				D60D7B08F42922C99972B64A /* FlightRoute.swift in Sources */,

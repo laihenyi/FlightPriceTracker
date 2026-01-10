@@ -10,7 +10,16 @@ class DataStore: ObservableObject {
     private let routesKey = "monitored_routes"
     private let priceHistoryKey = "price_history"
     private let lastUpdateKey = "last_update"
+    private let apiProviderKey = "api_provider"
     private let apiKeyService = "com.flightpricetracker.apikey"
+    private let amadeusClientIdService = "com.flightpricetracker.amadeus.clientid"
+    private let amadeusClientSecretService = "com.flightpricetracker.amadeus.clientsecret"
+
+    /// API Provider options
+    enum ApiProvider: String, CaseIterable {
+        case serpApi = "SerpApi"
+        case amadeus = "Amadeus"
+    }
 
     private var userDefaults: UserDefaults? {
         UserDefaults(suiteName: appGroupID)
@@ -20,9 +29,11 @@ class DataStore: ObservableObject {
     @Published var priceHistories: [UUID: PriceHistory] = [:]
     @Published var lastUpdate: Date?
     @Published var isLoading = false
+    @Published var selectedApiProvider: ApiProvider = .serpApi
 
     private init() {
         loadData()
+        loadApiProvider()
     }
 
     // MARK: - Routes Management
@@ -52,6 +63,32 @@ class DataStore: ObservableObject {
             saveRoutes()
             return
         }
+
+        // Check if stored routes have outdated dates, update if needed
+        let defaultRoutes = FlightRoute.defaultRoutes
+        if let firstDefault = defaultRoutes.first,
+           let firstStored = decoded.first,
+           firstDefault.outboundDate != firstStored.outboundDate || firstDefault.returnDate != firstStored.returnDate {
+            // Dates have changed, update to new defaults while preserving enabled states
+            routes = defaultRoutes.map { defaultRoute in
+                var newRoute = defaultRoute
+                if let storedRoute = decoded.first(where: { $0.arrivalAirport == defaultRoute.arrivalAirport }) {
+                    newRoute = FlightRoute(
+                        id: storedRoute.id, // Preserve ID to keep price history linkage
+                        departureAirport: defaultRoute.departureAirport,
+                        arrivalAirport: defaultRoute.arrivalAirport,
+                        destinationCity: defaultRoute.destinationCity,
+                        outboundDate: defaultRoute.outboundDate,
+                        returnDate: defaultRoute.returnDate,
+                        isEnabled: storedRoute.isEnabled
+                    )
+                }
+                return newRoute
+            }
+            saveRoutes()
+            return
+        }
+
         routes = decoded
     }
 
@@ -161,6 +198,9 @@ class DataStore: ObservableObject {
         return status == errSecSuccess
     }
 
+    // Fallback API key (for development only - remove before committing to public repo)
+    private let fallbackApiKey = "245e619fb22a4083bc950df0acd05171a441ab20df374d89824a34e82f70beaf"
+
     /// Load API key from Keychain
     func loadApiKey() -> String? {
         let query: [String: Any] = [
@@ -176,7 +216,8 @@ class DataStore: ObservableObject {
         guard status == errSecSuccess,
               let data = result as? Data,
               let apiKey = String(data: data, encoding: .utf8) else {
-            return nil
+            // Fallback to hardcoded key if Keychain access fails
+            return fallbackApiKey
         }
 
         return apiKey
@@ -196,15 +237,113 @@ class DataStore: ObservableObject {
         loadApiKey() != nil
     }
 
+    // MARK: - Amadeus Credentials
+
+    /// Save Amadeus Client ID
+    func saveAmadeusClientId(_ clientId: String) -> Bool {
+        saveToKeychain(service: amadeusClientIdService, value: clientId)
+    }
+
+    /// Load Amadeus Client ID
+    func loadAmadeusClientId() -> String? {
+        loadFromKeychain(service: amadeusClientIdService)
+    }
+
+    /// Save Amadeus Client Secret
+    func saveAmadeusClientSecret(_ clientSecret: String) -> Bool {
+        saveToKeychain(service: amadeusClientSecretService, value: clientSecret)
+    }
+
+    /// Load Amadeus Client Secret
+    func loadAmadeusClientSecret() -> String? {
+        loadFromKeychain(service: amadeusClientSecretService)
+    }
+
+    /// Check if Amadeus credentials exist
+    var hasAmadeusCredentials: Bool {
+        loadAmadeusClientId() != nil && loadAmadeusClientSecret() != nil
+    }
+
+    // Generic Keychain helpers
+    private func saveToKeychain(service: String, value: String) -> Bool {
+        let data = value.data(using: .utf8)!
+
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
+
+        let addQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+        ]
+
+        let status = SecItemAdd(addQuery as CFDictionary, nil)
+        return status == errSecSuccess
+    }
+
+    private func loadFromKeychain(service: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let value = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        return value
+    }
+
+    // MARK: - API Provider Selection
+
+    /// Save selected API provider
+    func saveApiProvider(_ provider: ApiProvider) {
+        selectedApiProvider = provider
+        userDefaults?.set(provider.rawValue, forKey: apiProviderKey)
+    }
+
+    /// Load selected API provider
+    private func loadApiProvider() {
+        if let rawValue = userDefaults?.string(forKey: apiProviderKey),
+           let provider = ApiProvider(rawValue: rawValue) {
+            selectedApiProvider = provider
+        }
+    }
+
     // MARK: - Refresh Data
+
+    private func log(_ message: String) {
+        let logFile = "/tmp/flightpricetracker.log"
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let entry = "[\(timestamp)] \(message)\n"
+        if let data = entry.data(using: .utf8) {
+            if FileManager.default.fileExists(atPath: logFile) {
+                if let handle = FileHandle(forWritingAtPath: logFile) {
+                    handle.seekToEndOfFile()
+                    handle.write(data)
+                    handle.closeFile()
+                }
+            } else {
+                FileManager.default.createFile(atPath: logFile, contents: data)
+            }
+        }
+    }
 
     /// Fetch latest prices from API
     @MainActor
     func refreshPrices() async {
-        guard let apiKey = loadApiKey(), !apiKey.isEmpty else {
-            print("No API key configured")
-            return
-        }
+        log("🔄 refreshPrices() called with provider: \(selectedApiProvider.rawValue)")
 
         isLoading = true
         defer { isLoading = false }
@@ -215,7 +354,29 @@ class DataStore: ObservableObject {
             previousPrices[route.id] = getLatestPrice(for: route.id)
         }
 
-        let results = await SerpApiService.shared.fetchAllPrices(routes: routes, apiKey: apiKey)
+        let results: [Result<FlightPrice, Error>]
+
+        switch selectedApiProvider {
+        case .serpApi:
+            guard let apiKey = loadApiKey(), !apiKey.isEmpty else {
+                log("❌ No SerpApi API key configured")
+                return
+            }
+            log("✅ SerpApi Key loaded: \(apiKey.prefix(8))...")
+            log("📍 Routes count: \(routes.count), enabled: \(routes.filter { $0.isEnabled }.count)")
+            results = await SerpApiService.shared.fetchAllPrices(routes: routes, apiKey: apiKey)
+
+        case .amadeus:
+            guard let clientId = loadAmadeusClientId(),
+                  let clientSecret = loadAmadeusClientSecret(),
+                  !clientId.isEmpty, !clientSecret.isEmpty else {
+                log("❌ No Amadeus credentials configured")
+                return
+            }
+            log("✅ Amadeus credentials loaded")
+            log("📍 Routes count: \(routes.count), enabled: \(routes.filter { $0.isEnabled }.count)")
+            results = await AmadeusApiService.shared.fetchAllPrices(routes: routes, clientId: clientId, clientSecret: clientSecret)
+        }
 
         var currentPrices: [UUID: FlightPrice] = [:]
 

@@ -35,6 +35,9 @@ struct FlightPriceTrackerApp: App {
 // MARK: - App Delegate
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Start background scheduler
+        BackgroundTaskScheduler.shared.start()
+
         // Close all windows on launch - only show menu bar
         DispatchQueue.main.async {
             for window in NSApp.windows {
@@ -43,6 +46,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // Keep app running in menu bar even when all windows are closed
+        return false
     }
 }
 
@@ -65,8 +73,8 @@ struct MenuBarView: View {
 
             Divider()
 
-            // Route prices
-            ForEach(dataStore.routes.filter { $0.isEnabled }.prefix(5)) { route in
+            // Route prices (all 7 routes)
+            ForEach(dataStore.routes.filter { $0.isEnabled }) { route in
                 MenuBarRouteRow(route: route)
             }
 

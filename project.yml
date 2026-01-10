@@ -21,6 +21,8 @@ targets:
         excludes:
           - "*.entitlements"
       - path: Shared
+        excludes:
+          - "**/CLAUDE.md"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.flightpricetracker.app
@@ -41,7 +43,10 @@ targets:
       - path: FlightWidget
         excludes:
           - "*.entitlements"
+          - "CLAUDE.md"
       - path: Shared
+        excludes:
+          - "**/CLAUDE.md"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.flightpricetracker.app.widget
