@@ -23,6 +23,10 @@ targets:
       - path: Shared
         excludes:
           - "**/CLAUDE.md"
+      - path: Config
+        type: folder
+        buildPhase: resources
+        optional: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.flightpricetracker.app

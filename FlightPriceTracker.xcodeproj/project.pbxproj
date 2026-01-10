@@ -22,6 +22,7 @@
 		64DCB5335504B6C7C33566F8 /* FlightWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEFEA229CD8CE3E7B5BA452 /* FlightWidgetBundle.swift */; };
 		7922674B681F87B3B1D923CB /* SerpApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924210E01BA2EFA92D19B8E5 /* SerpApiService.swift */; };
 		7A0217DF63F396C5DDF10B8B /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1102FC93E0BC6E136E26D4AB /* DataStore.swift */; };
+		94CBA25AE7E04A09F5392877 /* Config in Resources */ = {isa = PBXBuildFile; fileRef = DDE2349C850FC23F49764617 /* Config */; };
 		95DEDD7B0C4A1252AAFF026B /* AmadeusApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C8961CDC970AFCA8215C888 /* AmadeusApiService.swift */; };
 		9AC538B57F255B5F8E1C6CAE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C9B4DC968793FDC6A878CF /* ContentView.swift */; };
 		9B34E9251EA5B28AFA0734A8 /* AmadeusApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C8961CDC970AFCA8215C888 /* AmadeusApiService.swift */; };
@@ -74,6 +75,7 @@
 		9F8D1E7D9D12FD4EAF248329 /* FlightPriceTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlightPriceTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDE863F3E179F3E0D3FE0C41 /* FlightWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightWidget.swift; sourceTree = "<group>"; };
 		D65291E7E3BE9EA97AFDEFA6 /* FlightWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FlightWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DDE2349C850FC23F49764617 /* Config */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Config; sourceTree = SOURCE_ROOT; };
 		F59585F06354274B9024A046 /* FlightPrice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightPrice.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -151,6 +153,7 @@
 		EE0FB2F2DEB714093257F33A = {
 			isa = PBXGroup;
 			children = (
+				DDE2349C850FC23F49764617 /* Config */,
 				1CB23A679C6B7B542E547BFC /* FlightPriceTracker */,
 				57C0FC543E0AC039ADF8C8B6 /* FlightWidget */,
 				10388BC3C0B23E143DA81332 /* Shared */,
@@ -189,6 +192,7 @@
 			buildConfigurationList = 29671D3E315FAB140233892F /* Build configuration list for PBXNativeTarget "FlightPriceTracker" */;
 			buildPhases = (
 				0D519E65BFA9D752F7176D5C /* Sources */,
+				DFA62C378CA7F2CC7F3CEB40 /* Resources */,
 				C9F9BD896AF6D8BC14836509 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -235,6 +239,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DFA62C378CA7F2CC7F3CEB40 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94CBA25AE7E04A09F5392877 /* Config in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		0D519E65BFA9D752F7176D5C /* Sources */ = {

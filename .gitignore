@@ -37,6 +37,8 @@ Carthage/Build/
 *.secret
 *.env
 .env.local
+Secrets.plist
+Config/Secrets.plist
 
 # IDE
 .idea/

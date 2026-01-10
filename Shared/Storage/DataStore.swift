@@ -198,7 +198,7 @@ class DataStore: ObservableObject {
         return status == errSecSuccess
     }
 
-    /// Load API key from Keychain
+    /// Load API key from Keychain, fallback to Secrets.plist
     func loadApiKey() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -210,13 +210,26 @@ class DataStore: ObservableObject {
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let apiKey = String(data: data, encoding: .utf8) else {
-            return nil
+        if status == errSecSuccess,
+           let data = result as? Data,
+           let apiKey = String(data: data, encoding: .utf8) {
+            return apiKey
         }
 
-        return apiKey
+        // Fallback to Secrets.plist for development
+        return loadFromSecretsPlist(key: "SerpApiKey")
+    }
+
+    /// Load a value from Config/Secrets.plist (development fallback)
+    private func loadFromSecretsPlist(key: String) -> String? {
+        guard let url = Bundle.main.url(forResource: "Secrets", withExtension: "plist", subdirectory: "Config"),
+              let data = try? Data(contentsOf: url),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let value = plist[key] as? String,
+              !value.hasPrefix("YOUR_") else {
+            return nil
+        }
+        return value
     }
 
     /// Delete API key from Keychain
@@ -240,9 +253,9 @@ class DataStore: ObservableObject {
         saveToKeychain(service: amadeusClientIdService, value: clientId)
     }
 
-    /// Load Amadeus Client ID
+    /// Load Amadeus Client ID from Keychain, fallback to Secrets.plist
     func loadAmadeusClientId() -> String? {
-        loadFromKeychain(service: amadeusClientIdService)
+        loadFromKeychain(service: amadeusClientIdService) ?? loadFromSecretsPlist(key: "AmadeusClientId")
     }
 
     /// Save Amadeus Client Secret
@@ -250,9 +263,9 @@ class DataStore: ObservableObject {
         saveToKeychain(service: amadeusClientSecretService, value: clientSecret)
     }
 
-    /// Load Amadeus Client Secret
+    /// Load Amadeus Client Secret from Keychain, fallback to Secrets.plist
     func loadAmadeusClientSecret() -> String? {
-        loadFromKeychain(service: amadeusClientSecretService)
+        loadFromKeychain(service: amadeusClientSecretService) ?? loadFromSecretsPlist(key: "AmadeusClientSecret")
     }
 
     /// Check if Amadeus credentials exist
