@@ -7,55 +7,101 @@ actor SerpApiService {
     private let baseURL = "https://serpapi.com/search.json"
     private let session: URLSession
 
-    /// Chinese airlines to exclude from results
-    private let excludedAirlines: Set<String> = [
-        // Major Chinese carriers
-        "Air China", "中國國際航空",
-        "China Eastern", "中國東方航空",
-        "China Southern", "中國南方航空",
-        "Hainan Airlines", "海南航空",
-        "Xiamen Airlines", "廈門航空",
-        "Shenzhen Airlines", "深圳航空",
-        "Sichuan Airlines", "四川航空",
-        "Spring Airlines", "春秋航空",
-        "Juneyao Airlines", "吉祥航空",
-        "Shandong Airlines", "山東航空",
-        "Lucky Air", "祥鵬航空",
-        "Tibet Airlines", "西藏航空",
-        "Okay Airways", "奧凱航空",
-        "9 Air", "九元航空",
-        "Beijing Capital Airlines", "首都航空",
-        "Loong Air", "長龍航空",
-        "Ruili Airlines", "瑞麗航空",
-        "Donghai Airlines", "東海航空",
-        "Urumqi Air", "烏魯木齊航空",
-        "Fuzhou Airlines", "福州航空",
-        "Colorful Guizhou Airlines", "多彩貴州航空",
-        "Qingdao Airlines", "青島航空",
-        "West Air", "西部航空",
-        "Chengdu Airlines", "成都航空",
-        "Kunming Airlines", "昆明航空",
-        "Grand China Air", "大新華航空",
-        "Hebei Airlines", "河北航空",
-        "Jiangxi Air", "江西航空",
-        "China United Airlines", "中國聯合航空",
-        "China Express Airlines", "華夏航空",
+    /// Chinese airport codes to exclude from layovers (不在中國境內轉機)
+    private let chinaAirportCodes: Set<String> = [
+        // Beijing 北京
+        "PEK", "PKX",
+        // Shanghai 上海
+        "PVG", "SHA",
+        // Guangzhou 廣州
+        "CAN",
+        // Shenzhen 深圳
+        "SZX",
+        // Chengdu 成都
+        "CTU", "TFU",
+        // Chongqing 重慶
+        "CKG",
+        // Xi'an 西安
+        "XIY",
+        // Hangzhou 杭州
+        "HGH",
+        // Nanjing 南京
+        "NKG",
+        // Wuhan 武漢
+        "WUH",
+        // Kunming 昆明
+        "KMG",
+        // Xiamen 廈門
+        "XMN",
+        // Qingdao 青島
+        "TAO",
+        // Dalian 大連
+        "DLC",
+        // Tianjin 天津
+        "TSN",
+        // Shenyang 瀋陽
+        "SHE",
+        // Harbin 哈爾濱
+        "HRB",
+        // Changsha 長沙
+        "CSX",
+        // Zhengzhou 鄭州
+        "CGO",
+        // Fuzhou 福州
+        "FOC",
+        // Jinan 濟南
+        "TNA",
+        // Urumqi 烏魯木齊
+        "URC",
+        // Nanning 南寧
+        "NNG",
+        // Haikou 海口
+        "HAK",
+        // Sanya 三亞
+        "SYX",
+        // Guiyang 貴陽
+        "KWE",
+        // Lanzhou 蘭州
+        "LHW",
+        // Yinchuan 銀川
+        "INC",
+        // Xining 西寧
+        "XNN",
+        // Hohhot 呼和浩特
+        "HET",
+        // Nanchang 南昌
+        "KHN",
+        // Hefei 合肥
+        "HFE",
+        // Changchun 長春
+        "CGQ",
+        // Shijiazhuang 石家莊
+        "SJW",
+        // Taiyuan 太原
+        "TYN",
+        // Wuxi 無錫
+        "WUX",
+        // Ningbo 寧波
+        "NGB",
+        // Wenzhou 溫州
+        "WNZ",
+        // Zhuhai 珠海
+        "ZUH",
     ]
 
     private init() {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForRequest = 60  // Increased timeout
+        config.timeoutIntervalForResource = 120
         self.session = URLSession(configuration: config)
     }
 
-    /// Check if a flight contains any excluded airline
-    private func containsExcludedAirline(_ flight: SerpApiFlight) -> Bool {
-        for leg in flight.flights {
-            let airlineLower = leg.airline.lowercased()
-            for excluded in excludedAirlines {
-                if airlineLower.contains(excluded.lowercased()) {
-                    return true
-                }
+    /// Check if a flight has any layover in China (中國境內轉機)
+    private func hasLayoverInChina(_ flight: SerpApiFlight) -> Bool {
+        guard let layovers = flight.layovers else { return false }
+        for layover in layovers {
+            if chinaAirportCodes.contains(layover.id.uppercased()) {
+                return true
             }
         }
         return false
@@ -75,6 +121,7 @@ actor SerpApiService {
             URLQueryItem(name: "return_date", value: dateFormatter.string(from: route.returnDate)),
             URLQueryItem(name: "currency", value: "TWD"),
             URLQueryItem(name: "hl", value: "zh-TW"),
+            URLQueryItem(name: "gl", value: "tw"),  // Geolocation: Taiwan
             URLQueryItem(name: "type", value: "1"),  // Round trip
             URLQueryItem(name: "api_key", value: apiKey)
         ]
@@ -99,21 +146,57 @@ actor SerpApiService {
             throw SerpApiError.httpError(statusCode: httpResponse.statusCode)
         }
 
-        let apiResponse = try JSONDecoder().decode(SerpApiResponse.self, from: data)
+        let apiResponse: SerpApiResponse
+        do {
+            apiResponse = try JSONDecoder().decode(SerpApiResponse.self, from: data)
+        } catch let DecodingError.keyNotFound(key, context) {
+            log("❌ Decoding error - Key '\(key.stringValue)' not found: \(context.debugDescription)")
+            throw SerpApiError.decodingError("Missing key: \(key.stringValue)")
+        } catch let DecodingError.typeMismatch(type, context) {
+            log("❌ Decoding error - Type mismatch for \(type): \(context.debugDescription)")
+            throw SerpApiError.decodingError("Type mismatch: \(type)")
+        } catch let DecodingError.valueNotFound(type, context) {
+            log("❌ Decoding error - Value not found for \(type): \(context.debugDescription)")
+            throw SerpApiError.decodingError("Value not found: \(type)")
+        } catch {
+            log("❌ Decoding error: \(error)")
+            throw error
+        }
 
-        // Find the best (cheapest) flight, excluding Chinese airlines
+        // Find the best (cheapest) flight, excluding flights with layovers in China and flights without prices
         let allFlights = (apiResponse.bestFlights ?? []) + (apiResponse.otherFlights ?? [])
-        let filteredFlights = allFlights.filter { !containsExcludedAirline($0) }
+        let flightsWithPrice = allFlights.filter { $0.price != nil }
+        let filteredFlights = flightsWithPrice.filter { !hasLayoverInChina($0) }
 
-        guard let cheapestFlight = filteredFlights.min(by: { $0.price < $1.price }) else {
+        // Log diagnostic info
+        log("📊 \(route.displayName): bestFlights=\(apiResponse.bestFlights?.count ?? 0), otherFlights=\(apiResponse.otherFlights?.count ?? 0)")
+        if let priceInsights = apiResponse.priceInsights, let lowestPrice = priceInsights.lowestPrice {
+            log("📊 \(route.displayName): priceInsights.lowestPrice=\(lowestPrice)")
+        }
+
+        // Log all available prices for debugging
+        let sortedPrices = flightsWithPrice.compactMap { $0.price }.sorted()
+        if !sortedPrices.isEmpty {
+            log("📊 \(route.displayName): all prices in response: \(sortedPrices.prefix(5).map { String($0) }.joined(separator: ", "))")
+        }
+
+        // Log filtered prices
+        let filteredPrices = filteredFlights.compactMap { $0.price }.sorted()
+        if !filteredPrices.isEmpty {
+            log("📊 \(route.displayName): after China filter: \(filteredPrices.prefix(5).map { String($0) }.joined(separator: ", "))")
+        }
+
+        guard let cheapestFlight = filteredFlights.min(by: { ($0.price ?? Int.max) < ($1.price ?? Int.max) }),
+              let price = cheapestFlight.price else {
             // If no flights after filtering, try all flights as fallback
-            guard let fallbackFlight = allFlights.min(by: { $0.price < $1.price }) else {
+            guard let fallbackFlight = flightsWithPrice.min(by: { ($0.price ?? Int.max) < ($1.price ?? Int.max) }),
+                  let fallbackPrice = fallbackFlight.price else {
                 throw SerpApiError.noFlightsFound
             }
             // Return fallback but mark it
             return FlightPrice(
                 routeId: route.id,
-                price: Double(fallbackFlight.price),
+                price: Double(fallbackPrice),
                 currency: "TWD",
                 airline: (fallbackFlight.flights.first?.airline ?? "Unknown") + " ⚠️",
                 duration: fallbackFlight.totalDuration,
@@ -123,7 +206,7 @@ actor SerpApiService {
 
         return FlightPrice(
             routeId: route.id,
-            price: Double(cheapestFlight.price),
+            price: Double(price),
             currency: "TWD",
             airline: cheapestFlight.flights.first?.airline ?? "Unknown",
             duration: cheapestFlight.totalDuration,
@@ -131,33 +214,48 @@ actor SerpApiService {
         )
     }
 
-    /// Fetch prices for all enabled routes
+    private func log(_ message: String) {
+        let logFile = "/tmp/flightpricetracker.log"
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let entry = "[\(timestamp)] [API] \(message)\n"
+        if let data = entry.data(using: .utf8) {
+            if FileManager.default.fileExists(atPath: logFile) {
+                if let handle = FileHandle(forWritingAtPath: logFile) {
+                    handle.seekToEndOfFile()
+                    handle.write(data)
+                    handle.closeFile()
+                }
+            } else {
+                FileManager.default.createFile(atPath: logFile, contents: data)
+            }
+        }
+    }
+
+    /// Fetch prices for all enabled routes (sequential to avoid rate limiting)
     func fetchAllPrices(routes: [FlightRoute], apiKey: String) async -> [Result<FlightPrice, Error>] {
         let enabledRoutes = routes.filter { $0.isEnabled }
+        var results: [Result<FlightPrice, Error>] = []
+        log("Starting fetch for \(enabledRoutes.count) routes")
 
-        return await withTaskGroup(of: (UUID, Result<FlightPrice, Error>).self) { group in
-            for route in enabledRoutes {
-                group.addTask {
-                    do {
-                        let price = try await self.fetchFlightPrice(for: route, apiKey: apiKey)
-                        return (route.id, .success(price))
-                    } catch {
-                        return (route.id, .failure(error))
-                    }
-                }
+        for (index, route) in enabledRoutes.enumerated() {
+            // Add delay between requests to avoid rate limiting (except first)
+            if index > 0 {
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
             }
 
-            var results: [(UUID, Result<FlightPrice, Error>)] = []
-            for await result in group {
-                results.append(result)
+            log("Fetching \(route.displayName)...")
+            do {
+                let price = try await self.fetchFlightPrice(for: route, apiKey: apiKey)
+                results.append(.success(price))
+                log("✅ \(route.displayName): TWD \(price.price)")
+            } catch {
+                results.append(.failure(error))
+                log("❌ \(route.displayName): \(error.localizedDescription)")
             }
-
-            // Sort by route order
-            let routeOrder = enabledRoutes.map { $0.id }
-            return results
-                .sorted { routeOrder.firstIndex(of: $0.0)! < routeOrder.firstIndex(of: $1.0)! }
-                .map { $0.1 }
         }
+
+        log("Completed all fetches")
+        return results
     }
 }
 
@@ -175,7 +273,7 @@ struct SerpApiResponse: Codable {
 }
 
 struct SerpApiFlight: Codable {
-    let price: Int
+    let price: Int?  // Some flights may not have a price
     let totalDuration: Int
     let flights: [FlightLeg]
     let layovers: [Layover]?
@@ -234,6 +332,7 @@ enum SerpApiError: LocalizedError {
     case rateLimitExceeded
     case noFlightsFound
     case httpError(statusCode: Int)
+    case decodingError(String)
 
     var errorDescription: String? {
         switch self {
@@ -249,6 +348,8 @@ enum SerpApiError: LocalizedError {
             return "No flights found for this route"
         case .httpError(let statusCode):
             return "HTTP error: \(statusCode)"
+        case .decodingError(let message):
+            return "Decoding error: \(message)"
         }
     }
 }

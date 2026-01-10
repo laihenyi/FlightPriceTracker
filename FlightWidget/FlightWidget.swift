@@ -133,27 +133,29 @@ struct SmallWidgetView: View {
 
             // Show first route with significant drop, or cheapest
             if let route = priorityRoute {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(route.destinationCity)
-                        .font(.headline)
-                        .lineLimit(1)
+                Link(destination: route.googleFlightsURL) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(route.destinationCity)
+                            .font(.headline)
+                            .lineLimit(1)
 
-                    if let price = entry.prices[route.id] {
-                        Text(price.formattedPrice)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
+                        if let price = entry.prices[route.id] {
+                            Text(price.formattedPrice)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
 
-                        if let change = entry.priceChanges[route.id] {
-                            HStack(spacing: 2) {
-                                Text(change.arrowIndicator)
-                                Text(change.formattedChangePercent)
-                                if change.isSignificantDrop {
-                                    Text("🔔")
+                            if let change = entry.priceChanges[route.id] {
+                                HStack(spacing: 2) {
+                                    Text(change.arrowIndicator)
+                                    Text(change.formattedChangePercent)
+                                    if change.isSignificantDrop {
+                                        Text("🔔")
+                                    }
                                 }
+                                .font(.caption)
+                                .foregroundColor(change.changeColor)
                             }
-                            .font(.caption)
-                            .foregroundColor(change.changeColor)
                         }
                     }
                 }
@@ -210,11 +212,13 @@ struct MediumWidgetView: View {
             // Route List (show up to 3)
             VStack(spacing: 6) {
                 ForEach(entry.routes.filter { $0.isEnabled }.prefix(3)) { route in
-                    RouteRowView(
-                        route: route,
-                        price: entry.prices[route.id],
-                        change: entry.priceChanges[route.id]
-                    )
+                    Link(destination: route.googleFlightsURL) {
+                        RouteRowView(
+                            route: route,
+                            price: entry.prices[route.id],
+                            change: entry.priceChanges[route.id]
+                        )
+                    }
                 }
             }
         }
@@ -252,12 +256,14 @@ struct LargeWidgetView: View {
             // Route List (show all 5)
             VStack(spacing: 8) {
                 ForEach(entry.routes.filter { $0.isEnabled }) { route in
-                    RouteRowView(
-                        route: route,
-                        price: entry.prices[route.id],
-                        change: entry.priceChanges[route.id],
-                        showDetails: true
-                    )
+                    Link(destination: route.googleFlightsURL) {
+                        RouteRowView(
+                            route: route,
+                            price: entry.prices[route.id],
+                            change: entry.priceChanges[route.id],
+                            showDetails: true
+                        )
+                    }
                     if route.id != entry.routes.filter({ $0.isEnabled }).last?.id {
                         Divider()
                     }

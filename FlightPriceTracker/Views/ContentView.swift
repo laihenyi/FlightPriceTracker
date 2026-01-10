@@ -184,10 +184,14 @@ struct RouteCardView: View {
             // Price & Change
             VStack(alignment: .trailing, spacing: 4) {
                 if let price = latestPrice {
-                    Text(price.formattedPrice)
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                    Link(destination: route.googleFlightsURL) {
+                        Text(price.formattedPrice)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .help("點擊在 Google Flights 搜尋")
 
                     if let change = priceChange {
                         HStack(spacing: 4) {

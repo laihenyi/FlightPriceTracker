@@ -143,9 +143,14 @@ struct MenuBarRouteRow: View {
             Spacer()
 
             if let price = dataStore.getLatestPrice(for: route.id) {
-                Text(price.formattedPrice)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                Link(destination: route.googleFlightsURL) {
+                    Text(price.formattedPrice)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.accentColor)
+                }
+                .buttonStyle(.plain)
+                .help("點擊在 Google Flights 搜尋")
 
                 if let change = dataStore.getPriceChange(for: route.id) {
                     Text(change.arrowIndicator + change.formattedChangePercent)

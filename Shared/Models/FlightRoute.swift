@@ -32,17 +32,33 @@ struct FlightRoute: Codable, Identifiable, Hashable {
     var displayName: String {
         "\(departureAirport) → \(arrivalAirport)"
     }
+
+    /// Generate Google Flights search URL for this route
+    var googleFlightsURL: URL {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let outboundStr = dateFormatter.string(from: outboundDate)
+        let returnStr = dateFormatter.string(from: returnDate)
+
+        // Format: "Flights to DEST from ORIGIN on YYYY-MM-DD through YYYY-MM-DD"
+        let query = "Flights to \(arrivalAirport) from \(departureAirport) on \(outboundStr) through \(returnStr)"
+
+        // URL encode the query
+        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+
+        return URL(string: "https://www.google.com/travel/flights?q=\(encodedQuery)")!
+    }
 }
 
 // MARK: - Default Routes (TPE to Europe)
 extension FlightRoute {
     /// Default monitored routes from Taipei
     static let defaultRoutes: [FlightRoute] = {
-        let calendar = Calendar.current
-        let today = Date()
-        // Default: 30 days from now, return 7 days later
-        let outbound = calendar.date(byAdding: .day, value: 30, to: today)!
-        let returnDate = calendar.date(byAdding: .day, value: 37, to: today)!
+        // Fixed travel dates: 2026-05-18 to 2026-06-05
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let outbound = dateFormatter.date(from: "2026-05-18")!
+        let returnDate = dateFormatter.date(from: "2026-06-05")!
 
         return [
             FlightRoute(
